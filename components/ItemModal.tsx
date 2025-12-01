@@ -68,7 +68,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
         const files = e.target.files;
         if (!files) return;
 
-        // Limit number of images to prevent payload too large errors
         if (images.length + files.length > 5) {
             alert("Maximum 5 images allowed to prevent database size limits.");
             return;
@@ -77,10 +76,8 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
         const newImages: string[] = [];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
-            // Basic size check (approx 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                 alert(`File ${file.name} is too large. Max 2MB per image.`);
+            if (file.size > 5 * 1024 * 1024) {
+                 alert(`File ${file.name} is too large. Max 5MB per image.`);
                  continue;
             }
 
@@ -188,7 +185,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
             onClose();
         } catch (err) {
             console.error(err);
-            // Error handling is done in parent
         } finally {
             setSubmitting(false);
         }

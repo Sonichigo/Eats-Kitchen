@@ -70,7 +70,6 @@ export default function Home() {
                 setItems(prev => [newItem, ...prev]);
             }
         } catch (e: any) {
-            // Robust Error Handling
             console.error(e);
             if (e.message && e.message.includes('Payload might be too large')) {
                 alert("Upload failed: The images are too large. Please try fewer or smaller images.");
@@ -143,13 +142,13 @@ export default function Home() {
                 )}
 
                 {loading && !error && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
                         {[1,2,3].map(i => <div key={i} className="h-80 bg-gray-200 rounded-xl"></div>)}
                     </div>
                 )}
 
                 {!loading && !error && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredItems.map(item => (
                             <ItemCard 
                                 key={item.id} 

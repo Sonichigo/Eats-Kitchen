@@ -1,6 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import mongoose from 'mongoose';
 import { dbConnect } from '@/lib/db';
 import { ItemModel } from '@/lib/models';
 import { Icons } from '@/components/ui/icons';
@@ -9,26 +10,42 @@ interface PageProps {
     params: { id: string };
 }
 
+// Force dynamic rendering to ensure we fetch fresh data
 export const dynamic = 'force-dynamic';
 
 export default async function ItemPage({ params }: PageProps) {
     await dbConnect();
 
-    const doc = await ItemModel.findOne({ 
-        $or: [
-            { slug: params.id },
-            { _id: params.id.match(/^[0-9a-fA-F]{24}$/) ? params.id : null }
-        ]
-    });
+    const routeParam = decodeURIComponent(params.id);
+    console.log(`[ItemPage] Searching for: "${routeParam}"`);
+
+    let doc = null;
+
+    try {
+        // 1. Try finding by Slug first (Exact match)
+        doc = await ItemModel.findOne({ slug: routeParam }).lean();
+
+        // 2. If not found, and param looks like an ID, try ID lookup
+        if (!doc && mongoose.isValidObjectId(routeParam)) {
+            console.log(`[ItemPage] Slug failed, trying ID lookup for: "${routeParam}"`);
+            doc = await ItemModel.findById(routeParam).lean();
+        }
+    } catch (error) {
+        console.error("[ItemPage] Database Error:", error);
+    }
 
     if (!doc) {
+        console.error(`[ItemPage] 404 Not Found for: "${routeParam}"`);
         return notFound();
     }
 
+    // 3. Serialize Data
     const item = {
-        ...doc.toObject(),
-        id: doc._id.toString()
-    } as any;
+        ...(doc as any),
+        id: (doc as any)._id.toString(),
+        _id: undefined,
+        __v: undefined
+    };
 
     const images = item.images && item.images.length > 0 ? item.images : (item.imageUrl ? [item.imageUrl] : []);
 
@@ -36,7 +53,7 @@ export default async function ItemPage({ params }: PageProps) {
         <div className="min-h-screen bg-gray-50 pb-20">
             <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
+                    <Link href="/" className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         <span className="font-medium">Back to Home</span>
                     </Link>

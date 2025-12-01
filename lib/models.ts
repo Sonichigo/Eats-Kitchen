@@ -18,23 +18,18 @@ export interface IItem {
 }
 
 const ItemSchema = new Schema<IItem>({
-  // Base Fields
   title: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   description: { type: String, required: true },
-  imageUrl: { type: String }, // Legacy
-  images: { type: [String], default: [] }, // New: Store Base64 or URLs
+  imageUrl: { type: String }, 
+  images: { type: [String], default: [] },
   createdAt: { type: Number, default: Date.now },
-  
-  // Discriminator Key
   type: { type: String, required: true, enum: ['recipe', 'restaurant'] },
   
-  // Recipe Specific Fields
+  // Specifics
   ingredients: { type: [String], default: undefined },
   instructions: { type: [String], default: undefined },
   prepTime: { type: String },
-
-  // Restaurant Specific Fields
   rating: { type: Number, min: 1, max: 5 },
   location: { type: String },
   priceRange: { type: String, enum: ['$$', '$$$', '$$$$'] }
@@ -59,5 +54,7 @@ const UserSchema = new Schema<IUser>({
   fullName: { type: String, required: false }
 });
 
+// STABLE SINGLETON PATTERN
+// Reuse existing models if they exist. Do NOT delete them in dev as it causes race conditions.
 export const ItemModel = (models.Item as Model<IItem>) || model<IItem>('Item', ItemSchema);
 export const UserModel = (models.User as Model<IUser>) || model<IUser>('User', UserSchema);

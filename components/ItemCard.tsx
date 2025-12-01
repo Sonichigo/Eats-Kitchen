@@ -49,12 +49,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onDelete, onEdit, isLo
         setCurrentImageIdx((prev) => (prev - 1 + images.length) % images.length);
     };
 
-    const linkHref = `/item/${item.slug || item.id}`;
+    // Use PLURAL /items/ to match the standard convention and fix 404s
+    const linkHref = `/items/${item.slug || item.id}`;
 
     return (
         <Link href={linkHref} className="block h-full">
             <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group flex flex-col h-full cursor-pointer relative">
-                {/* Image Container with Fixed Ratio */}
                 <div className="h-56 overflow-hidden relative bg-gray-100 flex-shrink-0 group/image">
                     {images.length > 0 ? (
                         <div className="w-full h-full relative">
@@ -71,7 +71,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onDelete, onEdit, isLo
                         <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                     )}
                     
-                    {/* Navigation Arrows */}
                     {images.length > 1 && (
                         <>
                             <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity z-20">
