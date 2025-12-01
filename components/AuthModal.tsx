@@ -4,10 +4,11 @@ import { Icons } from './ui/icons';
 interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onLogin: (password: string) => Promise<void>;
+    onLogin: (username: string, password: string) => Promise<void>;
 }
 
 export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -19,7 +20,8 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
         setLoading(true);
         setError('');
         try {
-            await onLogin(password);
+            await onLogin(username, password);
+            setUsername('');
             setPassword('');
             onClose();
         } catch (err: any) {
@@ -36,10 +38,20 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                     <div className="mx-auto bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                         <Icons.Lock />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Admin Access</h2>
-                    <p className="text-gray-500 text-sm mt-1">Please enter your credentials to continue.</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Staff Access</h2>
+                    <p className="text-gray-500 text-sm mt-1">Enter your username and password.</p>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <input 
+                            type="text" 
+                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Username"
+                            autoFocus
+                        />
+                    </div>
                     <div>
                         <input 
                             type="password" 
@@ -47,7 +59,6 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Password"
-                            autoFocus
                         />
                     </div>
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}

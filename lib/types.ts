@@ -4,7 +4,8 @@ export interface BaseItem {
     id: string;
     title: string;
     description: string;
-    imageUrl?: string;
+    imageUrl?: string; // Deprecated but kept for backward compatibility
+    images?: string[]; // New: Multiple images
     createdAt: number;
 }
 
