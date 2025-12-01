@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GourmetGuide",
-  description: "AI Powered Recipes and Restaurant Reviews",
+  title: "Eats & Kitchen",
+  description: "Fine Recipes and Restaurant Reviews",
 };
 
 export default function RootLayout({

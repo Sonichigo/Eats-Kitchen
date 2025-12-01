@@ -15,7 +15,7 @@ export function Header({ isLoggedIn, onLoginClick, onLogout }: HeaderProps) {
                     <div className="bg-primary text-white p-2 rounded-lg">
                         <Icons.Chef />
                     </div>
-                    <span className="text-xl font-bold text-gray-900 tracking-tight">Gourmet<span className="text-primary">Guide</span></span>
+                    <span className="text-xl font-bold text-gray-900 tracking-tight">Eats<span className="text-primary">&Kitchen</span></span>
                 </div>
                 <div>
                     {isLoggedIn ? (
