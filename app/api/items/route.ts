@@ -3,16 +3,24 @@ import { dbConnect } from '@/lib/db';
 import { ItemModel } from '@/lib/models';
 import { verifyAuth } from '@/lib/auth';
 
+function slugify(text: string) {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+}
+
 export async function GET() {
     try {
         await dbConnect();
-        // Sort by newest first
         const items = await ItemModel.find({}).sort({ createdAt: -1 });
         
-        // Transform _id to id for frontend compatibility
         const transformed = items.map(doc => {
             const obj = doc.toObject() as any;
             obj.id = obj._id.toString();
+            if (!obj.slug) obj.slug = obj._id.toString(); 
             delete obj._id;
             delete obj.__v;
             return obj;
@@ -34,8 +42,17 @@ export async function POST(request: Request) {
         const body = await request.json();
         await dbConnect();
         
+        let baseSlug = slugify(body.title);
+        let slug = baseSlug;
+        let counter = 1;
+        while (await ItemModel.findOne({ slug })) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+        }
+
         const newItem = await ItemModel.create({
             ...body,
+            slug,
             createdAt: Date.now()
         });
 
@@ -46,6 +63,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(obj, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
+        console.error("Create Item Error:", error);
+        return NextResponse.json({ error: 'Failed to create item. Payload might be too large.' }, { status: 500 });
     }
 }

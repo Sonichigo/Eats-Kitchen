@@ -3,8 +3,9 @@ export type Category = 'recipe' | 'restaurant';
 export interface BaseItem {
     id: string;
     title: string;
+    slug: string; // URL friendly identifier
     description: string;
-    imageUrl?: string; // Deprecated but kept for backward compatibility
+    imageUrl?: string; // Legacy support
     images?: string[]; // New: Multiple images
     createdAt: number;
 }

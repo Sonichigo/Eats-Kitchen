@@ -15,7 +15,6 @@ export async function POST(request: Request) {
         let user = await UserModel.findOne({ username });
 
         // AUTO-SEED: If trying to log in as 'admin' and it doesn't exist, create it automatically
-        // This is useful for first-time setup without running external scripts
         if (!user && username === 'admin') {
             console.log('Admin user not found. Auto-seeding default admin...');
             const salt = await bcrypt.genSalt(10);
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
         const secret = new TextEncoder().encode(JWT_SECRET);
         const token = await new SignJWT({ sub: user._id.toString(), role: user.role })
             .setProtectedHeader({ alg: 'HS256' })
-            .setExpirationTime('24h')
+            .setExpirationTime('24h') // 1 Day Expiration
             .sign(secret);
 
         return NextResponse.json({ token, user: { name: user.fullName || user.username } });

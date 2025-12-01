@@ -3,6 +3,15 @@ import { dbConnect } from '@/lib/db';
 import { ItemModel } from '@/lib/models';
 import { verifyAuth } from '@/lib/auth';
 
+function slugify(text: string) {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+}
+
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
     const auth = await verifyAuth(request);
     if (!auth) {
@@ -13,9 +22,25 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const body = await request.json();
         await dbConnect();
         
+        let updateData = { ...body };
+        
+        if (body.title) {
+            const currentItem = await ItemModel.findById(params.id);
+            if (currentItem && currentItem.title !== body.title) {
+                let baseSlug = slugify(body.title);
+                let slug = baseSlug;
+                let counter = 1;
+                while (await ItemModel.findOne({ slug, _id: { $ne: params.id } })) {
+                    slug = `${baseSlug}-${counter}`;
+                    counter++;
+                }
+                updateData.slug = slug;
+            }
+        }
+
         const updated = await ItemModel.findByIdAndUpdate(
             params.id,
-            { ...body },
+            updateData,
             { new: true }
         );
 
@@ -30,6 +55,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
         return NextResponse.json(obj);
     } catch (error) {
+        console.error("Update Item Error:", error);
         return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
     }
 }

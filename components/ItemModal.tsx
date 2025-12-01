@@ -38,7 +38,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
             setTitle(initialData.title);
             setDescription(initialData.description);
             
-            // Consolidate legacy imageUrl into images array if needed
             let existingImages = initialData.images || [];
             if (existingImages.length === 0 && initialData.imageUrl) {
                 existingImages = [initialData.imageUrl];
@@ -69,11 +68,23 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
         const files = e.target.files;
         if (!files) return;
 
+        // Limit number of images to prevent payload too large errors
+        if (images.length + files.length > 5) {
+            alert("Maximum 5 images allowed to prevent database size limits.");
+            return;
+        }
+
         const newImages: string[] = [];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const reader = new FileReader();
             
+            // Basic size check (approx 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                 alert(`File ${file.name} is too large. Max 2MB per image.`);
+                 continue;
+            }
+
+            const reader = new FileReader();
             try {
                 const base64 = await new Promise<string>((resolve, reject) => {
                     reader.onload = () => resolve(reader.result as string);
@@ -86,7 +97,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
             }
         }
         setImages(prev => [...prev, ...newImages]);
-        // Reset input
         e.target.value = '';
     };
 
@@ -120,8 +130,7 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                     contents: `Generate a recipe for "${aiPrompt}". Return ONLY valid JSON format with keys: title, description, ingredients (array of strings), instructions (array of strings), prepTime.`,
                     config: { responseMimeType: 'application/json' }
                 });
-                if (!response.text) throw new Error('Empty response from AI');
-                const data = JSON.parse(response.text);
+                const data = JSON.parse(response.text || '{}');
                 setTitle(data.title);
                 setDescription(data.description);
                 setIngredients(data.ingredients.join('\n'));
@@ -133,8 +142,7 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                     contents: `Write a restaurant review for "${aiPrompt}". Return ONLY valid JSON format with keys: title, description, location (city/country), priceRange ($$ or $$$ or $$$$). Assume a high quality restaurant.`,
                     config: { responseMimeType: 'application/json' }
                 });
-                if (!response.text) throw new Error('Empty response from AI');
-                const data = JSON.parse(response.text);
+                const data = JSON.parse(response.text || '{}');
                 setTitle(data.title);
                 setDescription(data.description);
                 setLocation(data.location);
@@ -157,7 +165,7 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                 title,
                 description,
                 images,
-                imageUrl: images.length > 0 ? images[0] : undefined // Backward compatibility
+                imageUrl: images.length > 0 ? images[0] : undefined
             };
 
             if (type === 'recipe') {
@@ -179,8 +187,8 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
             }
             onClose();
         } catch (err) {
-            alert('Failed to save item. Payload might be too large if using many high-res images.');
             console.error(err);
+            // Error handling is done in parent
         } finally {
             setSubmitting(false);
         }
@@ -223,7 +231,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* LEFT COLUMN: Main Info */}
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -232,13 +239,11 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea required value={description} onChange={e => setDescription(e.target.value)} rows={type === 'restaurant' ? 8 : 4} className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none resize-none" placeholder="Enter detailed description..." />
+                                <textarea required value={description} onChange={e => setDescription(e.target.value)} rows={6} className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none resize-none" placeholder="Enter detailed description..." />
                             </div>
 
-                            {/* Images Section */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
-                                
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Images (Max 5)</label>
                                 <div className="grid grid-cols-4 gap-2 mb-3">
                                     {images.map((img, idx) => (
                                         <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border border-gray-200">
@@ -252,13 +257,14 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                                             </button>
                                         </div>
                                     ))}
-                                    <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors aspect-square text-gray-400 hover:text-gray-600">
-                                        <Icons.Plus />
-                                        <span className="text-xs mt-1">Upload</span>
-                                        <input type="file" multiple accept="image/*" onChange={handleFileUpload} className="hidden" />
-                                    </label>
+                                    {images.length < 5 && (
+                                        <label className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors aspect-square text-gray-400 hover:text-gray-600">
+                                            <Icons.Plus />
+                                            <span className="text-xs mt-1">Upload</span>
+                                            <input type="file" multiple accept="image/*" onChange={handleFileUpload} className="hidden" />
+                                        </label>
+                                    )}
                                 </div>
-
                                 <div className="flex gap-2">
                                     <input 
                                         value={tempImageUrl} 
@@ -271,7 +277,6 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Type Specific */}
                         <div className="space-y-4">
                              {type === 'recipe' ? (
                                 <>

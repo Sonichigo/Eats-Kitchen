@@ -3,9 +3,10 @@ import mongoose, { Schema, model, models, Model } from 'mongoose';
 // --- Item Schema (Recipes & Restaurants) ---
 export interface IItem {
   title: string;
+  slug: string;
   description: string;
   imageUrl?: string;
-  images?: string[]; // New: Array of image strings
+  images?: string[];
   createdAt: number;
   type: 'recipe' | 'restaurant';
   ingredients?: string[];
@@ -19,6 +20,7 @@ export interface IItem {
 const ItemSchema = new Schema<IItem>({
   // Base Fields
   title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
   description: { type: String, required: true },
   imageUrl: { type: String }, // Legacy
   images: { type: [String], default: [] }, // New: Store Base64 or URLs
@@ -50,13 +52,12 @@ export interface IUser {
 
 const UserSchema = new Schema<IUser>({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Store Hashed Passwords
+  password: { type: String, required: true }, 
   role: { type: String, default: 'admin' },
   createdAt: { type: Date, default: Date.now },
   email: { type: String, required: false },
   fullName: { type: String, required: false }
 });
 
-// Helper to prevent recompilation errors in hot-reload environments
 export const ItemModel = (models.Item as Model<IItem>) || model<IItem>('Item', ItemSchema);
 export const UserModel = (models.User as Model<IUser>) || model<IUser>('User', UserSchema);

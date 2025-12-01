@@ -26,7 +26,6 @@ export default function Home() {
 
     useEffect(() => {
         loadItems();
-        // Check for existing session token in localStorage
         const savedToken = localStorage.getItem('authToken');
         if (savedToken) setAuthToken(savedToken);
     }, []);
@@ -64,17 +63,23 @@ export default function Home() {
 
         try {
             if (editingItem) {
-                // Update Mode
                 const updated = await api.updateItem(authToken, editingItem.id, data);
                 setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
             } else {
-                // Add Mode
                 const newItem = await api.addItem(authToken, data as any);
                 setItems(prev => [newItem, ...prev]);
             }
-        } catch (e) {
-            alert("Failed to save. Session may be expired.");
-            handleLogout();
+        } catch (e: any) {
+            // Robust Error Handling
+            console.error(e);
+            if (e.message && e.message.includes('Payload might be too large')) {
+                alert("Upload failed: The images are too large. Please try fewer or smaller images.");
+            } else if (e.message === 'Unauthorized' || e.message === 'Invalid token') {
+                 alert("Session expired. Please login again.");
+                 handleLogout();
+            } else {
+                alert(`Failed to save: ${e.message || 'Unknown error'}`);
+            }
         }
     };
 
@@ -84,8 +89,7 @@ export default function Home() {
             await api.deleteItem(authToken, id);
             setItems(prev => prev.filter(i => i.id !== id));
         } catch (e) {
-            alert("Failed to delete. Session may be expired.");
-            handleLogout();
+            alert("Failed to delete.");
         }
     };
 
@@ -112,7 +116,6 @@ export default function Home() {
             />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Hero / Controls */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                     <div>
                         <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Discover Excellence</h1>
@@ -126,7 +129,6 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* Error State */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center mb-8">
                         <div className="text-red-500 mb-2">
@@ -136,23 +138,16 @@ export default function Home() {
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-1">Connection Error</h3>
                         <p className="text-gray-600 mb-4">{error}</p>
-                        <button 
-                            onClick={loadItems}
-                            className="px-6 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-                        >
-                            Retry Connection
-                        </button>
+                        <button onClick={loadItems} className="px-6 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Retry Connection</button>
                     </div>
                 )}
 
-                {/* Loading State */}
                 {loading && !error && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
                         {[1,2,3].map(i => <div key={i} className="h-80 bg-gray-200 rounded-xl"></div>)}
                     </div>
                 )}
 
-                {/* Data Grid */}
                 {!loading && !error && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredItems.map(item => (
@@ -167,7 +162,6 @@ export default function Home() {
                     </div>
                 )}
 
-                {/* Empty State */}
                 {!loading && !error && filteredItems.length === 0 && (
                     <div className="text-center py-20">
                          <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -175,19 +169,10 @@ export default function Home() {
                         </div>
                         <h3 className="text-lg font-bold text-gray-900">Empty</h3>
                         <p className="text-gray-500 mt-1">No recipe or restaurant added yet</p>
-                        {authToken && (
-                            <button 
-                                onClick={handleAddClick} 
-                                className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-red-500 transition-colors text-sm font-medium"
-                            >
-                                Add your first item
-                            </button>
-                        )}
                     </div>
                 )}
             </main>
 
-            {/* Floating Action Button for Admin */}
             {authToken && !error && (
                 <button 
                     onClick={handleAddClick}
@@ -197,19 +182,8 @@ export default function Home() {
                 </button>
             )}
 
-            {/* Modals */}
-            <AuthModal 
-                isOpen={isLoginOpen} 
-                onClose={() => setIsLoginOpen(false)} 
-                onLogin={handleLogin} 
-            />
-            
-            <ItemModal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
-                onSave={handleSave}
-                initialData={editingItem}
-            />
+            <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onLogin={handleLogin} />
+            <ItemModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} initialData={editingItem} />
         </div>
     );
 }
