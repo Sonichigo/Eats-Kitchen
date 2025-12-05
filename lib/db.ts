@@ -3,11 +3,9 @@ import mongoose from 'mongoose';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Helper to cache the connection in development/serverless environments
-// Fix: Use globalThis instead of global to avoid TypeScript errors
 let cached = (globalThis as any).mongoose;
 
 if (!cached) {
-  // Fix: Use globalThis instead of global
   cached = (globalThis as any).mongoose = { conn: null, promise: null };
 }
 
@@ -23,6 +21,7 @@ export async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10, // Optimize connection pooling
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {

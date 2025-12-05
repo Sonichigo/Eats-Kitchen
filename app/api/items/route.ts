@@ -15,7 +15,13 @@ function slugify(text: string) {
 export async function GET() {
     try {
         await dbConnect();
-        const items = await ItemModel.find({}).sort({ createdAt: -1 });
+        // OPTIMIZATION: 
+        // 1. Exclude 'instructions' (large text not shown in card)
+        // 2. Slice 'images' to only return the first 1 (thumbnail) to prevent downloading massive Base64 strings for the list
+        const items = await ItemModel.find({}, {
+            instructions: 0, 
+            images: { $slice: 1 }
+        }).sort({ createdAt: -1 });
         
         const transformed = items.map(doc => {
             const obj = doc.toObject() as any;
