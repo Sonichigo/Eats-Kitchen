@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     if (!item) {
         return {
-            title: 'Item Not Found | GourmetGuide',
+            title: 'Item Not Found | The Culinary Map',
             description: 'The requested recipe or review could not be found.'
         };
     }
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const bannerImage = images[0] || '';
 
     return {
-        title: `${item.title} | GourmetGuide`,
+        title: `${item.title} | The Culinary Map`,
         description: item.description.substring(0, 160) + '...', // Truncate for SEO
         openGraph: {
             title: item.title,
@@ -98,7 +98,7 @@ export default async function ItemPage({ params }: PageProps) {
                         <div className="bg-primary text-white p-1.5 rounded-lg">
                             <Icons.Chef />
                         </div>
-                        <span className="font-bold text-gray-900">GourmetGuide</span>
+                        <span className="font-bold text-gray-900">The Culinary Map</span>
                     </div>
                 </div>
             </nav>

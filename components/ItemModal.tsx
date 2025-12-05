@@ -64,6 +64,48 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
 
     if (!isOpen) return null;
 
+    // OPTIMIZATION: Resize and Compress Images on Client Side
+    const resizeImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Max dimension 1024px to keep base64 string size reasonable (<300KB)
+                    const MAX_SIZE = 1024;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG 0.7 quality
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
@@ -75,22 +117,12 @@ export function ItemModal({ isOpen, onClose, onSave, initialData }: ItemModalPro
 
         const newImages: string[] = [];
         for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (file.size > 5 * 1024 * 1024) {
-                 alert(`File ${file.name} is too large. Max 5MB per image.`);
-                 continue;
-            }
-
-            const reader = new FileReader();
             try {
-                const base64 = await new Promise<string>((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-                newImages.push(base64);
+                // Resize before adding state
+                const compressedBase64 = await resizeImage(files[i]);
+                newImages.push(compressedBase64);
             } catch (err) {
-                console.error("Error reading file", err);
+                console.error("Error processing file", err);
             }
         }
         setImages(prev => [...prev, ...newImages]);
